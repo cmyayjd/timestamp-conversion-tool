@@ -18,15 +18,27 @@
       <div class="loadFile">
         <label for="loadFileBtn">
           <input type="file" accept=".txt" id="loadFileBtn" ref="fileInput" @change="readFile"/>
-          <div class="button">上传文件</div>
+          <div class="button">选择文件</div>
         </label>
       </div>
       <div class="button" @click="batchConvert">批量转换</div>
+      <div class="button" @click="clear">清空</div>
+    </div>
+    <!--自定义光标-->
+    <div class="cursor cursor-point" ref="cursorPoint">
+      <img alt="cursor img" src="./images/author.png">
+    </div>
+    <div class="cursor cursor-round" ref="cursorRound">
+      <div class="inner"></div>
     </div>
   </div>
 </template>
 
 <script>
+
+const lerp = (x, y, diff) => {
+  return ( 1 - diff) * x + diff * y
+}
 
 export default {
   name: 'App',
@@ -43,16 +55,10 @@ export default {
     }
   },
   mounted(){
+    // 文件拖拽
     let drag = this.$refs.drag
-    drag.addEventListener('dragover', e => {
-      e.preventDefault()
-    })
-    drag.addEventListener('dragleave', e => {
-      e.preventDefault()
-    })
     drag.addEventListener('drop', e => {
       e.preventDefault()
-      console.log(e.dataTransfer.files)
       const file = e.dataTransfer.files[0]
       if(file){
         this.readFromText(file)
@@ -61,6 +67,8 @@ export default {
           })
       }
     })
+
+    this.initCursor()
   },
   methods: {
     // 获取焦点
@@ -105,6 +113,30 @@ export default {
           resolve(this.result)
         }
       })
+    },
+    clear(){
+      this.left.content = ''
+      this.right.content = ''
+    },
+    initCursor(){
+      let clientX = -100
+      let clientY = -100
+      let lastX = 0
+      let lastY = 0
+      const cursorPoint = this.$refs.cursorPoint
+      const cursorRound = this.$refs.cursorRound
+      document.addEventListener("mousemove", e => {
+        clientX = e.clientX
+        clientY = e.clientY
+      })
+      const render = () => {
+        cursorPoint.style.transform = `translate(${clientX}px, ${clientY}px)`
+        lastX = lerp(lastX, clientX - 16, 0.2)
+        lastY = lerp(lastY, clientY - 16, 0.2)
+        cursorRound.style.transform = `translate(${lastX}px, ${lastY}px)`
+        requestAnimationFrame(render)
+      }
+      requestAnimationFrame(render)
     }
   }
 }
@@ -115,6 +147,7 @@ export default {
   margin: 0px;
   padding: 0px;
   box-sizing: border-box;
+  cursor: none;
   input, textarea{
     outline: none;
   }
@@ -188,7 +221,6 @@ h1{
     line-height: 38px;
     font-size: 14px;
     margin-left: 12px;
-    cursor: pointer;
   }
   .loadFile{
     position: relative;
@@ -196,6 +228,42 @@ h1{
       position: absolute;
       width: 1px;
       height: 1px;
+    }
+  }
+}
+
+.cursor{
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  &.cursor-point{
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    overflow: hidden;
+    z-index: 1200;
+    img{
+      display: block;
+      width: 100%;
+    }
+  }
+  &.cursor-round{
+    position: fixed;
+    width: 60px;
+    height: 60px;
+    z-index: 1000;
+    background: #4e3845;
+    opacity: 0.7;
+    border-radius: 50%;
+    .inner{
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 50px;
+      height: 50px;
+      background: #ffffff;
+      border-radius: 50%;
     }
   }
 }
